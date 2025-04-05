@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
+const pdfParse = require('pdf-parse');
 require('dotenv').config();
 
 const app = express();
@@ -38,6 +39,32 @@ function generateDocumentUrl(documentNumber) {
   return `${BASE_URL}/tp_${String(documentNumber).padStart(3, '0')}.html`;
 }
 
+// Function to extract author from PDF text
+async function extractAuthorFromPdf(pdfBuffer) {
+  try {
+    const data = await pdfParse(pdfBuffer);
+    const text = data.text;
+    
+    // Split text into lines and find the first line containing a colon
+    const lines = text.split('\n');
+    for (const line of lines) {
+      const colonIndex = line.indexOf(':');
+      if (colonIndex > 0) {
+        // Extract everything before the colon and trim whitespace
+        const author = line.substring(0, colonIndex).trim();
+        if (author) {
+          return author;
+        }
+      }
+    }
+    
+    return 'Unknown';
+  } catch (error) {
+    console.error('Error extracting author from PDF:', error);
+    return 'Unknown';
+  }
+}
+
 // Function to scrape documents from a specific page
 async function scrapeDocumentsFromPage(documentNumber) {
   try {
@@ -48,21 +75,58 @@ async function scrapeDocumentsFromPage(documentNumber) {
     const $ = cheerio.load(response.data);
     const documents = [];
 
-    // Find all document links in the page
-    $('a').each((i, element) => {
-      const href = $(element).attr('href');
+    // Find all document entries
+    $('b').each((i, element) => {
       const text = $(element).text().trim();
-      
-      if (href && href.match(/\.(pdf|doc|docx)$/i)) {
-        const fullUrl = new URL(href, url).toString();
-        documents.push({
-          filename: text || href.split('/').pop(),
-          link: fullUrl,
-          author: 'Unknown', // This will need to be extracted based on the actual page structure
-          documentNumber: documentNumber
-        });
+      if (text.includes(':')) {
+        const author = text.split(':')[0].trim();
+        
+        // Find the PDF link associated with this entry
+        const nextLink = $(element).next('a');
+        if (nextLink.length) {
+          const href = nextLink.attr('href');
+          if (href && href.match(/\.pdf$/i)) {
+            const fullUrl = new URL(href, url).toString();
+            documents.push({
+              filename: nextLink.text().trim() || href.split('/').pop(),
+              link: fullUrl,
+              author: author,
+              documentNumber: documentNumber
+            });
+          }
+        }
       }
     });
+
+    // If no documents found with the first method, try alternative method
+    if (documents.length === 0) {
+      $('a').each((i, element) => {
+        const href = $(element).attr('href');
+        if (href && href.match(/\.pdf$/i)) {
+          const fullUrl = new URL(href, url).toString();
+          const filename = $(element).text().trim() || href.split('/').pop();
+          
+          // Try to find the author in the previous elements
+          let author = 'Unknown';
+          let prevElement = $(element).prev();
+          while (prevElement.length) {
+            const prevText = prevElement.text().trim();
+            if (prevText.includes(':')) {
+              author = prevText.split(':')[0].trim();
+              break;
+            }
+            prevElement = prevElement.prev();
+          }
+          
+          documents.push({
+            filename: filename,
+            link: fullUrl,
+            author: author,
+            documentNumber: documentNumber
+          });
+        }
+      });
+    }
 
     return documents;
   } catch (error) {
