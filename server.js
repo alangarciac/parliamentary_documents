@@ -75,58 +75,30 @@ async function scrapeDocumentsFromPage(documentNumber) {
     const $ = cheerio.load(response.data);
     const documents = [];
 
-    // Find all document entries
-    $('b').each((i, element) => {
-      const text = $(element).text().trim();
-      if (text.includes(':')) {
-        const author = text.split(':')[0].trim();
-        
-        // Find the PDF link associated with this entry
-        const nextLink = $(element).next('a');
-        if (nextLink.length) {
-          const href = nextLink.attr('href');
-          if (href && href.match(/\.pdf$/i)) {
-            const fullUrl = new URL(href, url).toString();
-            documents.push({
-              filename: nextLink.text().trim() || href.split('/').pop(),
-              link: fullUrl,
-              author: author,
-              documentNumber: documentNumber
-            });
-          }
-        }
-      }
-    });
+    $('p').each((i, p) => {
+    const bold = $(p).find('b').first();
+    const authorText = bold.text().trim();
+    const author = authorText.includes(':') ? authorText.split(':')[0].trim() : authorText;
 
-    // If no documents found with the first method, try alternative method
-    if (documents.length === 0) {
-      $('a').each((i, element) => {
-        const href = $(element).attr('href');
-        if (href && href.match(/\.pdf$/i)) {
-          const fullUrl = new URL(href, url).toString();
-          const filename = $(element).text().trim() || href.split('/').pop();
-          
-          // Try to find the author in the previous elements
-          let author = 'Unknown';
-          let prevElement = $(element).prev();
-          while (prevElement.length) {
-            const prevText = prevElement.text().trim();
-            if (prevText.includes(':')) {
-              author = prevText.split(':')[0].trim();
-              break;
-            }
-            prevElement = prevElement.prev();
-          }
-          
-          documents.push({
-            filename: filename,
-            link: fullUrl,
-            author: author,
-            documentNumber: documentNumber
-          });
-        }
+    const nextSpan = bold.closest('p').find('span').eq(1); // second span
+    const linkElement = nextSpan.find('a').first();
+
+    if (linkElement.length) {
+      const href = linkElement.attr('href');
+      const fullUrl = new URL(href, url).toString();
+      const filename = linkElement.text().trim() || href.split('/').pop();
+      const documentNumber = filename.split('-')[0];
+
+      documents.push({
+          filename: filename,
+          link: fullUrl,
+          author: author,
+          documentNumber: documentNumber
       });
     }
+});
+
+
 
     return documents;
   } catch (error) {
