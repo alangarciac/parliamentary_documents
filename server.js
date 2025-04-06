@@ -74,6 +74,8 @@ async function scrapeDocumentsFromPage(documentNumber) {
     const response = await axios.get(url);
     const $ = cheerio.load(response.data);
     const documents = [];
+    const breadcrumbText = $('#breadcrumb').text();
+    const parlamentaryDocumentNumber = breadcrumbText.match(/TRAMITE PARLAMENTARIO N°\s*(\d+)/i)[1];
 
     $('p').each((i, p) => {
     const bold = $(p).find('b').first();
@@ -93,7 +95,7 @@ async function scrapeDocumentsFromPage(documentNumber) {
           filename: filename,
           link: fullUrl,
           author: author,
-          documentNumber: documentNumber
+          documentNumber: parlamentaryDocumentNumber
       });
     }
   });

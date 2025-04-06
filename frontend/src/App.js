@@ -101,7 +101,7 @@ function App() {
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Start Document Number
+            Tramite Parlamentario
           </label>
           <input
             type="number"
@@ -142,7 +142,7 @@ function App() {
           <thead>
             <tr className="bg-gray-100">
               <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Número de Documento
+                Número de Tramite Parlamentario
               </th>
               <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Nombre del Documento
