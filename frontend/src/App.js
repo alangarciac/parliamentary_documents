@@ -96,8 +96,8 @@ function App() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Parliamentary Documents</h1>
-      
+      <h1 className="text-3xl font-bold mb-8">Documentos Parlamentarios</h1>
+      <p className="text-sm mb-8">Listado de Documentos Parlamentarios del congreso Argentino</p>
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -142,16 +142,16 @@ function App() {
           <thead>
             <tr className="bg-gray-100">
               <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Document Number
+                Número de Documento
               </th>
               <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Filename
+                Nombre del Documento
               </th>
               <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Author
+                Autores
               </th>
               <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+                Acciones
               </th>
             </tr>
           </thead>
@@ -174,7 +174,7 @@ function App() {
                     rel="noopener noreferrer"
                     className="text-blue-500 hover:text-blue-700"
                   >
-                    View
+                    Ver PDF
                   </a>
                 </td>
               </tr>

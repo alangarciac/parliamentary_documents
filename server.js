@@ -96,9 +96,7 @@ async function scrapeDocumentsFromPage(documentNumber) {
           documentNumber: documentNumber
       });
     }
-});
-
-
+  });
 
     return documents;
   } catch (error) {
