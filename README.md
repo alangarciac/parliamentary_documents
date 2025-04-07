@@ -34,6 +34,9 @@ The application uses a MySQL database with a well-structured schema that include
 
 The database is designed with proper indexing, foreign key constraints, and timestamp tracking for all records.
 
+![image](https://github.com/user-attachments/assets/b09fc896-2ade-49d9-b2f2-27e5d821381f)
+
+
 ### Application Composition
 
 The application is divided into several key components:
