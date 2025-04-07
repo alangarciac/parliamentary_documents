@@ -39,31 +39,6 @@ function generateDocumentUrl(documentNumber) {
   return `${BASE_URL}/tp_${String(documentNumber).padStart(3, '0')}.html`;
 }
 
-// Function to extract author from PDF text
-async function extractAuthorFromPdf(pdfBuffer) {
-  try {
-    const data = await pdfParse(pdfBuffer);
-    const text = data.text;
-    
-    // Split text into lines and find the first line containing a colon
-    const lines = text.split('\n');
-    for (const line of lines) {
-      const colonIndex = line.indexOf(':');
-      if (colonIndex > 0) {
-        // Extract everything before the colon and trim whitespace
-        const author = line.substring(0, colonIndex).trim();
-        if (author) {
-          return author;
-        }
-      }
-    }
-    
-    return 'Unknown';
-  } catch (error) {
-    console.error('Error extracting author from PDF:', error);
-    return 'Unknown';
-  }
-}
 
 // Function to scrape documents from a specific page
 async function scrapeDocumentsFromPage(documentNumber) {
@@ -98,7 +73,7 @@ async function scrapeDocumentsFromPage(documentNumber) {
           documentNumber: parlamentaryDocumentNumber
       });
     }
-  });
+    });
 
     return documents;
   } catch (error) {
