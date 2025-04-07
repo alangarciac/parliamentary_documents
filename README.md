@@ -1,107 +1,78 @@
 # Parlaments v1
 
-Aplicación web para gestionar y visualizar documentos parlamentarios del Congreso de la Nación Argentina.
+A web application for managing and viewing parliamentary documents from the Argentine Congress.
 
-## Características
+**Author:** Alan Garcia Camiña
 
-- Gestión de documentos parlamentarios
-- Integración con base de datos MySQL
-- Control manual del scraper
-- Filtrado por autor y número de trámite
-- Paginación de resultados
-- Interfaz de usuario intuitiva
+## Features
 
-## Stack Técnico
+- Parliamentary document management
+- MySQL database integration
+- Manual scraper control
+- Filtering by author and parliamentary procedure number
+- Results pagination
+- Intuitive user interface
+
+## Technical Stack
 
 - Frontend: React.js
-- Backend: Node.js con Express
-- Base de datos: MySQL con Sequelize ORM
-- Scraper: Node.js con Puppeteer
+- Backend: Node.js with Express
+- Database: MySQL with Sequelize ORM
+- Scraper: Node.js with Puppeteer
 
-## Base de Datos
+## Application Architecture
 
-### Esquema Inicial
+### Database Structure
 
-La aplicación utiliza una base de datos MySQL con el siguiente esquema:
+The application uses a MySQL database with a well-structured schema that includes:
 
-```sql
-CREATE TABLE parliamentary_tramits (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    number VARCHAR(50) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+- **Parliamentary Procedures**: Stores information about parliamentary procedures
+- **Documents**: Contains document details including names and PDF links
+- **Authors**: Manages author information
+- **Subscribers**: Handles user subscriptions
+- **Relationship Tables**: Manages many-to-many relationships between documents and authors, and subscribers and authors
 
-CREATE TABLE documents (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    link_to_pdf VARCHAR(255) NOT NULL,
-    parliamentary_tramit_id INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (parliamentary_tramit_id) REFERENCES parliamentary_tramits(id)
-);
+The database is designed with proper indexing, foreign key constraints, and timestamp tracking for all records.
 
-CREATE TABLE authors (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+### Application Composition
 
-CREATE TABLE document_authors (
-    document_id INT,
-    author_id INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (document_id, author_id),
-    FOREIGN KEY (document_id) REFERENCES documents(id),
-    FOREIGN KEY (author_id) REFERENCES authors(id)
-);
+The application is divided into several key components:
 
-CREATE TABLE subscribers (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
+1. **Frontend (React.js)**
+   - Modern, responsive UI built with React
+   - Real-time document filtering and search
+   - Pagination system for document navigation
+   - Interactive author and procedure number filters
 
-CREATE TABLE subscriber_authors (
-    subscriber_id INT,
-    author_id INT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (subscriber_id, author_id),
-    FOREIGN KEY (subscriber_id) REFERENCES subscribers(id),
-    FOREIGN KEY (author_id) REFERENCES authors(id)
-);
-```
+2. **Backend (Node.js/Express)**
+   - RESTful API endpoints
+   - Document management services
+   - Database operations through Sequelize ORM
+   - Error handling and validation
 
-### Configuración Inicial
+3. **Database Layer (MySQL/Sequelize)**
+   - Efficient data storage and retrieval
+   - Optimized queries for document filtering
+   - Proper relationship management
+   - Automatic timestamp tracking
 
-1. Crear una base de datos MySQL:
-```sql
-CREATE DATABASE parlaments_db;
-```
+4. **Scraper System**
+   - Automated document collection
+   - Scheduled updates
+   - Manual trigger capability
+   - Error handling and logging
 
-2. Configurar las variables de entorno:
+### Configuration
+
+1. Database Setup:
 ```env
 DB_HOST=localhost
-DB_USER=tu_usuario
-DB_PASSWORD=tu_contraseña
+DB_USER=your_username
+DB_PASSWORD=your_password
 DB_NAME=parlaments_db
 ```
 
-3. La aplicación creará automáticamente las tablas al iniciar si no existen.
-
-### Modelos
-
-La aplicación utiliza Sequelize ORM con los siguientes modelos:
-
-- `ParliamentaryTramit`: Representa un trámite parlamentario
-- `Document`: Almacena información de documentos
-- `Author`: Gestiona autores de documentos
-- `Subscriber`: Maneja suscriptores
-- `DocumentAuthor`: Relación muchos a muchos entre documentos y autores
-- `SubscriberAuthor`: Relación muchos a muchos entre suscriptores y autores
+2. The application will automatically create the necessary database tables on first run.
 
 ## Features
 
@@ -131,21 +102,6 @@ La aplicación utiliza Sequelize ORM con los siguientes modelos:
 - Parameter validation for page ranges
 - Default range (1-5) for scheduled jobs
 - Real-time status updates and error handling
-
-## Technical Stack
-
-### Frontend
-- React.js
-- CSS3 with responsive design
-- Modern UI components
-- Client-side filtering and search
-
-### Backend
-- Node.js with Express
-- MySQL database
-- Sequelize ORM
-- Automated scraping system
-- Scheduled tasks with node-cron
 
 ## API Endpoints
 
@@ -198,18 +154,6 @@ npm start
 # Start the frontend development server
 cd frontend
 npm start
-```
-
-## Configuration
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
-DB_NAME=parliamentary_documents
-DB_USER=your_username
-DB_PASSWORD=your_password
-DB_HOST=localhost
-PORT=3001
 ```
 
 ## Usage
