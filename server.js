@@ -3,6 +3,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const cors = require('cors');
 const pdfParse = require('pdf-parse');
+const documentScraper = require('./jobs/documentScraper');
 require('dotenv').config();
 
 const app = express();
@@ -135,12 +136,26 @@ app.get('/api/test', (req, res) => {
   res.json({ message: 'Backend is working!' });
 });
 
+// Manual trigger endpoint for the scraper
+app.get('/run-scraper', async (req, res) => {
+  try {
+    await documentScraper.run();
+    res.json({ message: 'Scraper job started successfully' });
+  } catch (error) {
+    console.error('Error triggering scraper:', error);
+    res.status(500).json({ error: 'Failed to start scraper job' });
+  }
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Test endpoint available at: http://localhost:${PORT}/api/test`);
   console.log(`Documents endpoint available at: http://localhost:${PORT}/api/documents`);
 });
+
+// Start the scheduled job
+documentScraper.startScheduledJob();
 
 // Export the scrapeDocuments function for CLI usage
 module.exports = {

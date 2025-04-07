@@ -4,6 +4,25 @@ import './App.css';
 // Backend API URL
 const API_URL = 'http://localhost:3001';
 
+// Utility function to process author names
+const processAuthorNames = (authorString) => {
+  if (!authorString || authorString === 'Unknown') return [];
+  
+  // Split by semicolon and trim each part
+  const authors = authorString.split(';').map(author => author.trim());
+  
+  // Process each author to handle "Y" cases
+  const processedAuthors = authors.flatMap(author => {
+    // Check if the author string contains " Y " (with spaces)
+    if (author.includes(' Y ')) {
+      return author.split(' Y ').map(name => name.trim());
+    }
+    return [author];
+  });
+  
+  return processedAuthors.filter(author => author.length > 0);
+};
+
 function App() {
   const [documents, setDocuments] = useState([]);
   const [filteredDocuments, setFilteredDocuments] = useState([]);
@@ -12,6 +31,12 @@ function App() {
   const [filter, setFilter] = useState('');
   const [startNumber, setStartNumber] = useState(26);
   const [endNumber, setEndNumber] = useState(30);
+  const [selectedAuthor, setSelectedAuthor] = useState(null);
+
+  // Get unique authors from documents
+  const uniqueAuthors = [...new Set(
+    documents.flatMap(doc => processAuthorNames(doc.authors_names))
+  )].filter(author => author !== 'Unknown');
 
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -19,13 +44,11 @@ function App() {
         setLoading(true);
         setError(null);
         
-        // First, test if the backend is accessible
         const testResponse = await fetch(`${API_URL}/api/test`);
         if (!testResponse.ok) {
           throw new Error('Backend server is not responding');
         }
 
-        console.log(`Fetching documents from ${API_URL}/api/documents?start=${startNumber}&end=${endNumber}`);
         const response = await fetch(
           `${API_URL}/api/documents?start=${startNumber}&end=${endNumber}`,
           {
@@ -49,6 +72,7 @@ function App() {
 
         setDocuments(data);
         setFilteredDocuments(data);
+        setSelectedAuthor(null);
       } catch (err) {
         console.error('Error fetching documents:', err);
         setError(`Failed to fetch documents: ${err.message}. Please make sure the backend server is running at ${API_URL}`);
@@ -61,17 +85,26 @@ function App() {
   }, [startNumber, endNumber]);
 
   useEffect(() => {
-    if (filter === '') {
-      setFilteredDocuments(documents);
-    } else {
-      const filtered = documents.filter(doc => 
-        doc.author.toLowerCase().includes(filter.toLowerCase()) ||
-        doc.filename.toLowerCase().includes(filter.toLowerCase()) ||
-        doc.documentNumber.toString().includes(filter)
+    let filtered = documents;
+    
+    // Apply text search filter first
+    if (filter !== '') {
+      filtered = filtered.filter(doc => 
+        doc.name.toLowerCase().includes(filter.toLowerCase()) ||
+        doc.authors_names.toLowerCase().includes(filter.toLowerCase()) ||
+        doc.parliamentary_number.toString().includes(filter)
       );
-      setFilteredDocuments(filtered);
     }
-  }, [filter, documents]);
+    
+    // Apply author filter only if an author is selected
+    if (selectedAuthor) {
+      filtered = filtered.filter(doc => 
+        processAuthorNames(doc.authors_names).includes(selectedAuthor)
+      );
+    }
+    
+    setFilteredDocuments(filtered);
+  }, [filter, documents, selectedAuthor]);
 
   if (loading) {
     return (
@@ -98,6 +131,33 @@ function App() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">Documentos Parlamentarios</h1>
       <p className="text-sm mb-8">Listado de Documentos Parlamentarios del congreso Argentino</p>
+      
+      {/* Author Filter Dropdown */}
+      <div className="mb-6">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Filtrar por Autor
+        </label>
+        <div className="relative">
+          <select
+            value={selectedAuthor || ''}
+            onChange={(e) => setSelectedAuthor(e.target.value || null)}
+            className="appearance-none px-4 py-2 border rounded-lg w-full bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Todos los autores</option>
+            {uniqueAuthors.map((author) => (
+              <option key={author} value={author}>
+                {author}
+              </option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
       <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -150,7 +210,7 @@ function App() {
           </label>
           <input
             type="text"
-            placeholder="Search by filename, author, or document number..."
+            placeholder="Search by name, author, or parliamentary number..."
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="px-4 py-2 border rounded-lg w-full"
@@ -186,7 +246,20 @@ function App() {
                   {doc.name}
                 </td>
                 <td className="px-6 py-4 border-b">
-                  {doc.authors_names}
+                  <div className="flex flex-wrap gap-2">
+                    {processAuthorNames(doc.authors_names).map((author, authorIndex) => (
+                      <button
+                        key={authorIndex}
+                        onClick={() => setSelectedAuthor(author)}
+                        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors
+                          ${selectedAuthor === author 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                      >
+                        {author}
+                      </button>
+                    ))}
+                  </div>
                 </td>
                 <td className="px-6 py-4 border-b">
                   <a
