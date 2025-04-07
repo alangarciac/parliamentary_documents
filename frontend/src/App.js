@@ -103,25 +103,46 @@ function App() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Tramite Parlamentario
           </label>
-          <input
-            type="number"
+          <select
             value={startNumber}
-            onChange={(e) => setStartNumber(parseInt(e.target.value) || 26)}
+            onChange={(e) => {
+              const newStart = parseInt(e.target.value);
+              setStartNumber(newStart);
+              // Ensure end number is not less than start number
+              if (endNumber < newStart) {
+                setEndNumber(newStart);
+              }
+            }}
             className="px-4 py-2 border rounded-lg w-full"
-            min="1"
-          />
+          >
+            {Array.from({length: 50}, (_, i) => i + 1).map((num) => (
+              <option key={num} value={num}>
+                {num}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             End Document Number
           </label>
-          <input
-            type="number"
+          <select
             value={endNumber}
-            onChange={(e) => setEndNumber(parseInt(e.target.value) || 30)}
+            onChange={(e) => {
+              const newEnd = parseInt(e.target.value);
+              // Only allow setting end number if it's greater than or equal to start number
+              if (newEnd >= startNumber) {
+                setEndNumber(newEnd);
+              }
+            }}
             className="px-4 py-2 border rounded-lg w-full"
-            min={startNumber}
-          />
+          >
+            {Array.from({length: 50 - startNumber + 1}, (_, i) => startNumber + i).map((num) => (
+              <option key={num} value={num}>
+                {num}
+              </option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
