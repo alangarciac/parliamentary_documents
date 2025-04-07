@@ -67,10 +67,10 @@ async function scrapeDocumentsFromPage(documentNumber) {
       const documentNumber = filename.split('-')[0];
 
       documents.push({
-          filename: filename,
-          link: fullUrl,
-          author: author,
-          documentNumber: parlamentaryDocumentNumber
+        name: filename,
+        link_to_pdf: fullUrl,
+        authors_names: author,
+        parliamentary_number: parlamentaryDocumentNumber
       });
     }
     });

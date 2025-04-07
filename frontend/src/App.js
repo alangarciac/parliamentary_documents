@@ -163,16 +163,16 @@ function App() {
           <thead>
             <tr className="bg-gray-100">
               <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Número de Tramite Parlamentario
+                N° Tramite Parlamentario
               </th>
               <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nombre del Documento
+                Documento
               </th>
               <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Autores
               </th>
               <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
+                Actions
               </th>
             </tr>
           </thead>
@@ -180,17 +180,17 @@ function App() {
             {filteredDocuments.map((doc, index) => (
               <tr key={index} className="hover:bg-gray-50">
                 <td className="px-6 py-4 border-b">
-                  {doc.documentNumber}
+                  {doc.parliamentary_number}
                 </td>
                 <td className="px-6 py-4 border-b">
-                  {doc.filename}
+                  {doc.name}
                 </td>
                 <td className="px-6 py-4 border-b">
-                  {doc.author}
+                  {doc.authors_names}
                 </td>
                 <td className="px-6 py-4 border-b">
                   <a
-                    href={doc.link}
+                    href={doc.link_to_pdf}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-500 hover:text-blue-700"
