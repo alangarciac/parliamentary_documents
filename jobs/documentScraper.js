@@ -16,13 +16,23 @@ class DocumentScraper {
         where: { link_to_pdf: documentData.link_to_pdf }
       });
 
+      // Find or create parliamentary tramit
+      const [parliamentaryTramit] = await ParliamentaryTramit.findOrCreate({
+        where: { number: documentData.parliamentary_tramit_id.toString() },
+        defaults: { number: documentData.parliamentary_tramit_id.toString() }
+      });
+
       if (existingDocument) {
         // Update existing document
         await existingDocument.update({
           name: documentData.name,
           description: documentData.description,
-          date: documentData.date
+          date: documentData.date,
+          parliamentary_tramit_id: parliamentaryTramit.id
         });
+
+        // Update authors
+        await this.updateDocumentAuthors(existingDocument, documentData.authors);
         return existingDocument;
       }
 
@@ -32,31 +42,40 @@ class DocumentScraper {
         link_to_pdf: documentData.link_to_pdf,
         description: documentData.description,
         date: documentData.date,
-        parliamentary_tramit_id: documentData.parliamentary_tramit_id
+        parliamentary_tramit_id: parliamentaryTramit.id
       });
 
       // Process authors
-      if (documentData.authors && documentData.authors.length > 0) {
-        for (const authorName of documentData.authors) {
-          // Find or create author
-          const [author] = await Author.findOrCreate({
-            where: { name: authorName },
-            defaults: { name: authorName }
-          });
-
-          // Create document-author relationship
-          await DocumentAuthor.findOrCreate({
-            where: {
-              document_id: document.id,
-              author_id: author.id
-            }
-          });
-        }
-      }
+      await this.updateDocumentAuthors(document, documentData.authors);
 
       return document;
     } catch (error) {
       console.error('Error processing document:', error);
+      throw error;
+    }
+  }
+
+  async updateDocumentAuthors(document, authors) {
+    try {
+      // Remove existing author associations
+      await DocumentAuthor.destroy({
+        where: { document_id: document.id }
+      });
+
+      // Create new author associations
+      for (const authorName of authors) {
+        const [author] = await Author.findOrCreate({
+          where: { name: authorName },
+          defaults: { name: authorName }
+        });
+
+        await DocumentAuthor.create({
+          document_id: document.id,
+          author_id: author.id
+        });
+      }
+    } catch (error) {
+      console.error('Error updating document authors:', error);
       throw error;
     }
   }
@@ -76,7 +95,14 @@ class DocumentScraper {
         const documents = await scrapeDocumentsFromPage(page);
 
         for (const documentData of documents) {
-          await this.processDocument(documentData);
+          try {
+            await this.processDocument(documentData);
+            console.log(`Processed document: ${documentData.name}`);
+          } catch (error) {
+            console.error(`Error processing document from page ${page}:`, error);
+            // Continue with next document even if one fails
+            continue;
+          }
         }
       }
 

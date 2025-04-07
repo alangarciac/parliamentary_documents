@@ -25,257 +25,235 @@ const processAuthorNames = (authorString) => {
 
 function App() {
   const [documents, setDocuments] = useState([]);
-  const [filteredDocuments, setFilteredDocuments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filter, setFilter] = useState('');
-  const [startNumber, setStartNumber] = useState(26);
-  const [endNumber, setEndNumber] = useState(30);
-  const [selectedAuthor, setSelectedAuthor] = useState(null);
-
-  // Get unique authors from documents
-  const uniqueAuthors = [...new Set(
-    documents.flatMap(doc => processAuthorNames(doc.authors_names))
-  )].filter(author => author !== 'Unknown');
+  const [authors, setAuthors] = useState([]);
+  const [selectedAuthor, setSelectedAuthor] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const testResponse = await fetch(`${API_URL}/api/test`);
-        if (!testResponse.ok) {
-          throw new Error('Backend server is not responding');
-        }
-
-        const response = await fetch(
-          `${API_URL}/api/documents?start=${startNumber}&end=${endNumber}`,
-          {
-            method: 'GET',
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-            },
-            mode: 'cors'
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        if (!Array.isArray(data)) {
-          throw new Error('Invalid response format from server');
-        }
-
-        setDocuments(data);
-        setFilteredDocuments(data);
-        setSelectedAuthor(null);
-      } catch (err) {
-        console.error('Error fetching documents:', err);
-        setError(`Failed to fetch documents: ${err.message}. Please make sure the backend server is running at ${API_URL}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+    fetchAuthors();
     fetchDocuments();
-  }, [startNumber, endNumber]);
+  }, [currentPage, selectedAuthor]);
 
-  useEffect(() => {
-    let filtered = documents;
-    
-    // Apply text search filter first
-    if (filter !== '') {
-      filtered = filtered.filter(doc => 
-        doc.name.toLowerCase().includes(filter.toLowerCase()) ||
-        doc.authors_names.toLowerCase().includes(filter.toLowerCase()) ||
-        doc.parliamentary_number.toString().includes(filter)
+  const fetchAuthors = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/authors');
+      const data = await response.json();
+      setAuthors(data);
+    } catch (error) {
+      console.error('Error fetching authors:', error);
+    }
+  };
+
+  const fetchDocuments = async () => {
+    setLoading(true);
+    try {
+      const url = new URL('http://localhost:3001/api/documents');
+      url.searchParams.append('page', currentPage);
+      if (selectedAuthor) {
+        url.searchParams.append('author', selectedAuthor);
+      }
+
+      const response = await fetch(url);
+      const data = await response.json();
+      setDocuments(data.documents);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAuthorChange = (author) => {
+    setSelectedAuthor(author);
+    setCurrentPage(1);
+  };
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const filteredDocuments = documents.filter(doc => 
+    doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    doc.authors.some(author => 
+      author.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const renderPagination = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // First page
+    if (startPage > 1) {
+      pages.push(
+        <button
+          key="first"
+          onClick={() => handlePageChange(1)}
+          className="pagination-button"
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        pages.push(<span key="ellipsis1" className="pagination-ellipsis">...</span>);
+      }
+    }
+
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => handlePageChange(i)}
+          className={`pagination-button ${currentPage === i ? 'active' : ''}`}
+        >
+          {i}
+        </button>
       );
     }
-    
-    // Apply author filter only if an author is selected
-    if (selectedAuthor) {
-      filtered = filtered.filter(doc => 
-        processAuthorNames(doc.authors_names).includes(selectedAuthor)
+
+    // Last page
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push(<span key="ellipsis2" className="pagination-ellipsis">...</span>);
+      }
+      pages.push(
+        <button
+          key="last"
+          onClick={() => handlePageChange(totalPages)}
+          className="pagination-button"
+        >
+          {totalPages}
+        </button>
       );
     }
-    
-    setFilteredDocuments(filtered);
-  }, [filter, documents, selectedAuthor]);
 
-  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-red-500 text-xl p-4 bg-red-100 rounded-lg">
-          {error}
-          <div className="mt-4 text-sm">
-            Make sure the backend server is running at {API_URL}
-          </div>
+      <div className="pagination-container">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="pagination-button navigation"
+        >
+          Anterior
+        </button>
+        <div className="pagination-numbers">
+          {pages}
         </div>
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="pagination-button navigation"
+        >
+          Siguiente
+        </button>
       </div>
     );
-  }
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Documentos Parlamentarios</h1>
-      <p className="text-sm mb-8">Listado de Documentos Parlamentarios del congreso Argentino</p>
-      
-      {/* Author Filter Dropdown */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Filtrar por Autor
-        </label>
-        <div className="relative">
-          <select
-            value={selectedAuthor || ''}
-            onChange={(e) => setSelectedAuthor(e.target.value || null)}
-            className="appearance-none px-4 py-2 border rounded-lg w-full bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Todos los autores</option>
-            {uniqueAuthors.map((author) => (
-              <option key={author} value={author}>
-                {author}
-              </option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-            </svg>
-          </div>
-        </div>
-      </div>
+    <div className="App">
+      <header className="App-header">
+        <h1>Documentos Parlamentarios</h1>
+      </header>
 
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Tramite Parlamentario
-          </label>
-          <select
-            value={startNumber}
-            onChange={(e) => {
-              const newStart = parseInt(e.target.value);
-              setStartNumber(newStart);
-              // Ensure end number is not less than start number
-              if (endNumber < newStart) {
-                setEndNumber(newStart);
-              }
-            }}
-            className="px-4 py-2 border rounded-lg w-full"
-          >
-            {Array.from({length: 50}, (_, i) => i + 1).map((num) => (
-              <option key={num} value={num}>
-                {num}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            End Document Number
-          </label>
-          <select
-            value={endNumber}
-            onChange={(e) => {
-              const newEnd = parseInt(e.target.value);
-              // Only allow setting end number if it's greater than or equal to start number
-              if (newEnd >= startNumber) {
-                setEndNumber(newEnd);
-              }
-            }}
-            className="px-4 py-2 border rounded-lg w-full"
-          >
-            {Array.from({length: 50 - startNumber + 1}, (_, i) => startNumber + i).map((num) => (
-              <option key={num} value={num}>
-                {num}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Search
-          </label>
+      <div className="filters">
+        <div className="search-box">
           <input
             type="text"
-            placeholder="Search by name, author, or parliamentary number..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="px-4 py-2 border rounded-lg w-full"
+            placeholder="Buscar por nombre o autor..."
+            value={searchTerm}
+            onChange={handleSearch}
+            className="search-input"
           />
+        </div>
+
+        <div className="author-filter">
+          <select
+            value={selectedAuthor}
+            onChange={(e) => handleAuthorChange(e.target.value)}
+            className="author-select"
+          >
+            <option value="">Todos los autores</option>
+            {authors.map(author => (
+              <option key={author.id} value={author.name}>
+                {author.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                N° Tramite Parlamentario
-              </th>
-              <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Documento
-              </th>
-              <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Autores
-              </th>
-              <th className="px-6 py-3 border-b text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredDocuments.map((doc, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="px-6 py-4 border-b">
-                  {doc.parliamentary_number}
-                </td>
-                <td className="px-6 py-4 border-b">
-                  {doc.name}
-                </td>
-                <td className="px-6 py-4 border-b">
-                  <div className="flex flex-wrap gap-2">
-                    {processAuthorNames(doc.authors_names).map((author, authorIndex) => (
-                      <button
-                        key={authorIndex}
-                        onClick={() => setSelectedAuthor(author)}
-                        className={`px-3 py-1 rounded-full text-sm font-medium transition-colors
-                          ${selectedAuthor === author 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+      {loading ? (
+        <div className="loading">
+          <div className="spinner"></div>
+          <p>Cargando documentos...</p>
+        </div>
+      ) : (
+        <>
+          <div className="table-container">
+            <table className="documents-table">
+              <thead>
+                <tr>
+                  <th>Trámite Parlamentario</th>
+                  <th>Documento</th>
+                  <th>Autores</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredDocuments.map((doc) => (
+                  <tr key={doc.id}>
+                    <td>{doc.parliamentaryTramit.number}</td>
+                    <td>{doc.name}</td>
+                    <td>
+                      {doc.authors.map((author, index) => (
+                        <span key={author.id}>
+                          {index > 0 && ', '}
+                          <button
+                            className="author-button"
+                            onClick={() => handleAuthorChange(author.name)}
+                          >
+                            {author.name}
+                          </button>
+                        </span>
+                      ))}
+                    </td>
+                    <td>
+                      <a
+                        href={doc.link_to_pdf}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="pdf-link"
                       >
-                        {author}
-                      </button>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-6 py-4 border-b">
-                  <a
-                    href={doc.link_to_pdf}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-700"
-                  >
-                    Ver PDF
-                  </a>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                        Ver PDF
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {renderPagination()}
+        </>
+      )}
     </div>
   );
 }
