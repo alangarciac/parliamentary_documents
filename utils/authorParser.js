@@ -4,10 +4,13 @@ function parseAuthorNames(authorString) {
   // Split by semicolon and trim each part
   const parts = authorString.split(';').map(part => part.trim());
 
-  // Process each part to handle "Y" cases
+  // Process each part to handle "Y" cases and clean names
   const authors = parts.reduce((acc, part) => {
     // Split by "Y" and trim each part
-    const subParts = part.split(/\s+Y\s+/i).map(subPart => subPart.trim());
+    const subParts = part.split(/\s+Y\s+/i).map(subPart => {
+      // Remove trailing colon and trim
+      return subPart.replace(/:$/, '').trim();
+    });
     
     // Add all parts to the accumulator
     return [...acc, ...subParts];

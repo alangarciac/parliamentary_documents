@@ -9,13 +9,13 @@ class DocumentService {
     } : {};
 
     const { count, rows } = await Document.findAndCountAll({
-      where: whereClause,
       include: [
         {
           model: Author,
           as: 'authors',
           attributes: ['id', 'name'],
-          through: { attributes: [] }
+          through: { attributes: [] },
+          ...(authorFilter ? { where: { name: authorFilter } } : {})
         },
         {
           model: ParliamentaryTramit,
