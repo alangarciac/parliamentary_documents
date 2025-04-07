@@ -26,7 +26,9 @@ const processAuthorNames = (authorString) => {
 function App() {
   const [documents, setDocuments] = useState([]);
   const [authors, setAuthors] = useState([]);
+  const [tramitNumbers, setTramitNumbers] = useState([]);
   const [selectedAuthor, setSelectedAuthor] = useState('');
+  const [selectedTramit, setSelectedTramit] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -34,8 +36,9 @@ function App() {
 
   useEffect(() => {
     fetchAuthors();
+    fetchTramitNumbers();
     fetchDocuments();
-  }, [currentPage, selectedAuthor]);
+  }, [currentPage, selectedAuthor, selectedTramit]);
 
   const fetchAuthors = async () => {
     try {
@@ -47,6 +50,16 @@ function App() {
     }
   };
 
+  const fetchTramitNumbers = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/tramit-numbers');
+      const data = await response.json();
+      setTramitNumbers(data.map(item => item.number));
+    } catch (error) {
+      console.error('Error fetching tramit numbers:', error);
+    }
+  };
+
   const fetchDocuments = async () => {
     setLoading(true);
     try {
@@ -54,6 +67,9 @@ function App() {
       url.searchParams.append('page', currentPage);
       if (selectedAuthor) {
         url.searchParams.append('author', selectedAuthor);
+      }
+      if (selectedTramit) {
+        url.searchParams.append('tramitNumber', selectedTramit);
       }
 
       const response = await fetch(url);
@@ -74,6 +90,11 @@ function App() {
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
+  };
+
+  const handleTramitChange = (value) => {
+    setSelectedTramit(value);
+    setCurrentPage(1);
   };
 
   const filteredDocuments = documents.filter(doc => 
@@ -174,6 +195,7 @@ function App() {
       </header>
 
       <div className="filters">
+      <label className="filter-label">Buscar por nombre o autor</label>
         <div className="search-box">
           <input
             type="text"
@@ -185,6 +207,7 @@ function App() {
         </div>
 
         <div className="author-filter">
+          <label className="filter-label">Autor</label>
           <select
             value={selectedAuthor}
             onChange={(e) => handleAuthorChange(e.target.value)}
@@ -194,6 +217,22 @@ function App() {
             {authors.map(author => (
               <option key={author.id} value={author.name}>
                 {author.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="tramit-filter">
+          <label className="filter-label">Trámite Parlamentario</label>
+          <select
+            value={selectedTramit}
+            onChange={(e) => handleTramitChange(e.target.value)}
+            className="tramit-select"
+          >
+            <option value="">Todos los trámites</option>
+            {tramitNumbers.map((number) => (
+              <option key={number} value={number}>
+                {number}
               </option>
             ))}
           </select>

@@ -1,28 +1,28 @@
 const { Document, Author, ParliamentaryTramit } = require('../models');
+const { Op } = require('sequelize');
 
 class DocumentService {
-  static async getDocuments(page = 1, limit = 10, authorFilter = null) {
+  static async getDocuments(page = 1, limit = 10, authorFilter = null, tramitNumber = null) {
     const offset = (page - 1) * limit;
     
-    const whereClause = authorFilter ? {
-      '$authors.name$': authorFilter
-    } : {};
+    const include = [
+      {
+        model: Author,
+        as: 'authors',
+        attributes: ['id', 'name'],
+        through: { attributes: [] },
+        ...(authorFilter ? { where: { name: authorFilter } } : {})
+      },
+      {
+        model: ParliamentaryTramit,
+        as: 'parliamentaryTramit',
+        attributes: ['id', 'number'],
+        ...(tramitNumber ? { where: { number: tramitNumber } } : {})
+      }
+    ];
 
     const { count, rows } = await Document.findAndCountAll({
-      include: [
-        {
-          model: Author,
-          as: 'authors',
-          attributes: ['id', 'name'],
-          through: { attributes: [] },
-          ...(authorFilter ? { where: { name: authorFilter } } : {})
-        },
-        {
-          model: ParliamentaryTramit,
-          as: 'parliamentaryTramit',
-          attributes: ['id', 'number']
-        }
-      ],
+      include,
       order: [['date', 'DESC']],
       limit,
       offset,
@@ -41,6 +41,14 @@ class DocumentService {
     return await Author.findAll({
       attributes: ['id', 'name'],
       order: [['name', 'ASC']]
+    });
+  }
+
+  static async getTramitNumbers() {
+    return await ParliamentaryTramit.findAll({
+      attributes: ['number'],
+      order: [['number', 'DESC']],
+      limit: 100 // Get the 100 most recent tramit numbers
     });
   }
 }

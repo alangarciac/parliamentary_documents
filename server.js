@@ -23,12 +23,13 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something broke!' });
 });
 
-// Get documents with pagination and optional author filter
+// Get documents with pagination and optional filters
 app.get('/api/documents', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const authorFilter = req.query.author || null;
-    const result = await DocumentService.getDocuments(page, 10, authorFilter);
+    const tramitNumber = req.query.tramitNumber || null;
+    const result = await DocumentService.getDocuments(page, 10, authorFilter, tramitNumber);
     res.json(result);
   } catch (error) {
     console.error('Error fetching documents:', error);
@@ -44,6 +45,17 @@ app.get('/api/authors', async (req, res) => {
   } catch (error) {
     console.error('Error fetching authors:', error);
     res.status(500).json({ error: 'Failed to fetch authors' });
+  }
+});
+
+// Get tramit numbers for the range filter
+app.get('/api/tramit-numbers', async (req, res) => {
+  try {
+    const tramitNumbers = await DocumentService.getTramitNumbers();
+    res.json(tramitNumbers);
+  } catch (error) {
+    console.error('Error fetching tramit numbers:', error);
+    res.status(500).json({ error: 'Failed to fetch tramit numbers' });
   }
 });
 
