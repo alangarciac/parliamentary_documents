@@ -1,6 +1,107 @@
 # Parlaments v1
 
-A web application for managing and viewing parliamentary documents from the Argentine Congress.
+Aplicación web para gestionar y visualizar documentos parlamentarios del Congreso de la Nación Argentina.
+
+## Características
+
+- Gestión de documentos parlamentarios
+- Integración con base de datos MySQL
+- Control manual del scraper
+- Filtrado por autor y número de trámite
+- Paginación de resultados
+- Interfaz de usuario intuitiva
+
+## Stack Técnico
+
+- Frontend: React.js
+- Backend: Node.js con Express
+- Base de datos: MySQL con Sequelize ORM
+- Scraper: Node.js con Puppeteer
+
+## Base de Datos
+
+### Esquema Inicial
+
+La aplicación utiliza una base de datos MySQL con el siguiente esquema:
+
+```sql
+CREATE TABLE parliamentary_tramits (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    number VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE documents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    link_to_pdf VARCHAR(255) NOT NULL,
+    parliamentary_tramit_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (parliamentary_tramit_id) REFERENCES parliamentary_tramits(id)
+);
+
+CREATE TABLE authors (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE document_authors (
+    document_id INT,
+    author_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (document_id, author_id),
+    FOREIGN KEY (document_id) REFERENCES documents(id),
+    FOREIGN KEY (author_id) REFERENCES authors(id)
+);
+
+CREATE TABLE subscribers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE subscriber_authors (
+    subscriber_id INT,
+    author_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (subscriber_id, author_id),
+    FOREIGN KEY (subscriber_id) REFERENCES subscribers(id),
+    FOREIGN KEY (author_id) REFERENCES authors(id)
+);
+```
+
+### Configuración Inicial
+
+1. Crear una base de datos MySQL:
+```sql
+CREATE DATABASE parlaments_db;
+```
+
+2. Configurar las variables de entorno:
+```env
+DB_HOST=localhost
+DB_USER=tu_usuario
+DB_PASSWORD=tu_contraseña
+DB_NAME=parlaments_db
+```
+
+3. La aplicación creará automáticamente las tablas al iniciar si no existen.
+
+### Modelos
+
+La aplicación utiliza Sequelize ORM con los siguientes modelos:
+
+- `ParliamentaryTramit`: Representa un trámite parlamentario
+- `Document`: Almacena información de documentos
+- `Author`: Gestiona autores de documentos
+- `Subscriber`: Maneja suscriptores
+- `DocumentAuthor`: Relación muchos a muchos entre documentos y autores
+- `SubscriberAuthor`: Relación muchos a muchos entre suscriptores y autores
 
 ## Features
 

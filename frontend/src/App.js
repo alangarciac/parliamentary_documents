@@ -230,11 +230,13 @@ function App() {
             className="tramit-select"
           >
             <option value="">Todos los trámites</option>
-            {tramitNumbers.map((number) => (
-              <option key={number} value={number}>
-                {number}
-              </option>
-            ))}
+            {tramitNumbers
+              .sort((a, b) => parseInt(a) - parseInt(b))
+              .map((number) => (
+                <option key={number} value={number}>
+                  Trámite {number}
+                </option>
+              ))}
           </select>
         </div>
       </div>

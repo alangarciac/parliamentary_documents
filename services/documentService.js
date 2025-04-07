@@ -47,7 +47,7 @@ class DocumentService {
   static async getTramitNumbers() {
     return await ParliamentaryTramit.findAll({
       attributes: ['number'],
-      order: [['number', 'DESC']],
+      order: [['number', 'ASC']],
       limit: 100 // Get the 100 most recent tramit numbers
     });
   }
