@@ -8,6 +8,7 @@ A web application for managing and viewing parliamentary documents from the Arge
 - View parliamentary documents in a structured table format
 - Search documents by name or author
 - Filter documents by author
+- Filter documents by parliamentary procedure number
 - View document details including:
   - Parliamentary procedure number
   - Document name
@@ -23,13 +24,12 @@ A web application for managing and viewing parliamentary documents from the Arge
 - Manual trigger option for immediate updates
 - Efficient data relationships between documents and authors
 
-### User Interface
-- Clean, modern table-based layout
-- Intuitive pagination controls
-- Interactive author filtering
-- Real-time search functionality
-- Loading states and error handling
-- Responsive design for mobile devices
+### Scraper Control
+- Manual control of scraping range
+- Customizable start and end pages
+- Parameter validation for page ranges
+- Default range (1-5) for scheduled jobs
+- Real-time status updates and error handling
 
 ## Technical Stack
 
@@ -46,43 +46,25 @@ A web application for managing and viewing parliamentary documents from the Arge
 - Automated scraping system
 - Scheduled tasks with node-cron
 
-## Database Schema
+## API Endpoints
 
-The application uses the following database structure:
+### Document Management
+- `GET /api/documents` - Get documents with pagination and filters
+  - Query parameters:
+    - `page`: Page number (default: 1)
+    - `author`: Filter by author name
+    - `tramitNumber`: Filter by parliamentary procedure number
 
-```sql
--- Parliamentary procedures
-CREATE TABLE parliamentary_tramit (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    number VARCHAR(50) NOT NULL
-);
+- `GET /api/authors` - Get all authors for filtering
+- `GET /api/tramit-numbers` - Get available parliamentary procedure numbers
 
--- Documents
-CREATE TABLE document (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    link_to_pdf TEXT NOT NULL,
-    description TEXT,
-    date DATE,
-    parliamentary_tramit_id INT NOT NULL,
-    FOREIGN KEY (parliamentary_tramit_id) REFERENCES parliamentary_tramit(id)
-);
-
--- Authors
-CREATE TABLE author (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
-);
-
--- Document-Author relationships
-CREATE TABLE document_author (
-    document_id INT NOT NULL,
-    author_id INT NOT NULL,
-    PRIMARY KEY (document_id, author_id),
-    FOREIGN KEY (document_id) REFERENCES document(id),
-    FOREIGN KEY (author_id) REFERENCES author(id)
-);
-```
+### Scraper Control
+- `GET /run-scraper` - Manually trigger the scraper
+  - Query parameters:
+    - `startPage`: Starting page number (optional)
+    - `endPage`: Ending page number (optional)
+  - Example: `/run-scraper?startPage=10&endPage=15`
+  - Default range: 1-5 (if no parameters provided)
 
 ## Installation
 
@@ -135,13 +117,25 @@ PORT=3001
 - Access the application at `http://localhost:3000`
 - Use the search bar to find specific documents
 - Filter documents by author using the dropdown
+- Filter documents by parliamentary procedure number
 - Navigate through pages using the pagination controls
 - Click on author names to filter by that author
 - Click "Ver PDF" to view the document
 
-### Admin Functions
-- Access the scraper endpoint at `http://localhost:3001/run-scraper` to manually trigger document updates
-- The scraper runs automatically every 5 hours
+### Scraper Control
+- The scraper runs automatically every 5 hours with default range (1-5)
+- Manually trigger the scraper with custom range:
+  ```bash
+  # Using default range
+  curl http://localhost:3001/run-scraper
+
+  # Using custom range
+  curl http://localhost:3001/run-scraper?startPage=10&endPage=15
+  ```
+- Validation rules:
+  - Both parameters must be numbers
+  - startPage must be greater than 0
+  - endPage must be greater than or equal to startPage
 
 ## Development
 

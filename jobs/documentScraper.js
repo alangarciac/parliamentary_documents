@@ -5,8 +5,21 @@ const { scrapeDocumentsFromPage } = require('../utils/scraper');
 class DocumentScraper {
   constructor() {
     this.isRunning = false;
-    this.startPage = 1;
-    this.endPage = 5; // Adjust this value based on your needs
+    this.defaultStartPage = 1;
+    this.defaultEndPage = 5;
+  }
+
+  validatePageRange(startPage, endPage) {
+    if (typeof startPage !== 'number' || typeof endPage !== 'number') {
+      throw new Error('startPage and endPage must be numbers');
+    }
+    if (startPage < 1) {
+      throw new Error('startPage must be greater than 0');
+    }
+    if (endPage < startPage) {
+      throw new Error('endPage must be greater than or equal to startPage');
+    }
+    return true;
   }
 
   async processDocument(documentData) {
@@ -80,7 +93,7 @@ class DocumentScraper {
     }
   }
 
-  async run() {
+  async run(startPage = null, endPage = null) {
     if (this.isRunning) {
       console.log('Scraper is already running');
       return;
@@ -90,7 +103,16 @@ class DocumentScraper {
     console.log('Starting document scraper job');
 
     try {
-      for (let page = this.startPage; page <= this.endPage; page++) {
+      // Use provided range or defaults
+      const start = startPage !== null ? parseInt(startPage) : this.defaultStartPage;
+      const end = endPage !== null ? parseInt(endPage) : this.defaultEndPage;
+
+      // Validate page range
+      this.validatePageRange(start, end);
+
+      console.log(`Processing pages from ${start} to ${end}`);
+
+      for (let page = start; page <= end; page++) {
         console.log(`Processing page ${page}`);
         const documents = await scrapeDocumentsFromPage(page);
 
@@ -109,13 +131,14 @@ class DocumentScraper {
       console.log('Document scraper job completed successfully');
     } catch (error) {
       console.error('Error in document scraper job:', error);
+      throw error;
     } finally {
       this.isRunning = false;
     }
   }
 
   startScheduledJob() {
-    // Run every 5 hours
+    // Run every 5 hours with default range
     cron.schedule('0 */5 * * *', () => {
       console.log('Running scheduled document scraper job');
       this.run();

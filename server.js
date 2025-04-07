@@ -59,14 +59,37 @@ app.get('/api/tramit-numbers', async (req, res) => {
   }
 });
 
-// Manual trigger endpoint for the scraper
+// Manual trigger endpoint for the scraper with optional page range
 app.get('/run-scraper', async (req, res) => {
   try {
-    await documentScraper.run();
-    res.json({ message: 'Scraper job started successfully' });
+    const startPage = req.query.startPage ? parseInt(req.query.startPage) : null;
+    const endPage = req.query.endPage ? parseInt(req.query.endPage) : null;
+
+    // Validate parameters if provided
+    if (startPage !== null && endPage !== null) {
+      if (isNaN(startPage) || isNaN(endPage)) {
+        return res.status(400).json({ error: 'startPage and endPage must be numbers' });
+      }
+      if (startPage < 1) {
+        return res.status(400).json({ error: 'startPage must be greater than 0' });
+      }
+      if (endPage < startPage) {
+        return res.status(400).json({ error: 'endPage must be greater than or equal to startPage' });
+      }
+    }
+
+    // Run the scraper with the provided range or defaults
+    await documentScraper.run(startPage, endPage);
+    res.json({ 
+      message: 'Scraper job started successfully',
+      range: {
+        startPage: startPage || documentScraper.defaultStartPage,
+        endPage: endPage || documentScraper.defaultEndPage
+      }
+    });
   } catch (error) {
-    console.error('Error triggering scraper:', error);
-    res.status(500).json({ error: 'Failed to start scraper job' });
+    console.error('Error starting scraper:', error);
+    res.status(500).json({ error: error.message || 'Failed to start scraper' });
   }
 });
 
