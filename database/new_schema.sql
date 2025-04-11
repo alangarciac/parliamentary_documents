@@ -12,7 +12,7 @@ CREATE TABLE role (
 CREATE TABLE user (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(150) NOT NULL UNIQUE,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     role_id INT,
     FOREIGN KEY (role_id) REFERENCES role(id)
@@ -90,3 +90,18 @@ CREATE TABLE user_author (
     FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE,
     FOREIGN KEY (author_id) REFERENCES author(id) ON DELETE CASCADE
 );
+
+
+
+
+
+-- Addroles and unser
+
+-- Insert roles
+INSERT INTO role (name) VALUES ('ADMIN'), ('USER');
+
+-- Get the role ID for ADMIN (assuming it's 1 or the first inserted row)
+-- Insert the admin user (plaintext password, should be hashed in production)
+INSERT INTO user (name, email, password, role_id)
+VALUES ('alangarcia', 'alangarciacamina@gmail.com', 'admin', 
+    (SELECT id FROM role WHERE name = 'ADMIN'));

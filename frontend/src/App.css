@@ -23,14 +23,72 @@ code {
   margin: 0 auto;
 }
 
-.App-header {
+.app-header {
+  background-color: #ffffff;
+  padding: 15px 30px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 30px;
+  border-radius: 8px;
 }
 
-.App-header h1 {
-  color: #333;
-  font-size: 2.5em;
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.archive-icon {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.app-header h1 {
+  color: #2c3e50;
+  font-size: 1.8em;
   margin: 0;
+  font-weight: 600;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background-color: #f8f9fa;
+  padding: 8px 15px;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.user-info span {
+  color: #2c3e50;
+  font-size: 0.95em;
+  font-weight: 500;
+}
+
+.logout-button {
+  padding: 8px 15px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.logout-button:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
 }
 
 .filters {
@@ -39,10 +97,38 @@ code {
   margin-bottom: 20px;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: flex-end;
   background-color: #f8f9fa;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.clear-filters-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 15px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-left: auto;
+  height: fit-content;
+}
+
+.clear-filters-button:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+}
+
+.clear-filters-button svg {
+  stroke: white;
 }
 
 .filter-group {
@@ -131,45 +217,71 @@ code {
 }
 
 .document-info {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  padding: 10px;
 }
 
-.document-name {
-  font-weight: 600;
+.document-info h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.1em;
   color: #333;
 }
 
 .document-type {
-  font-size: 0.9em;
+  display: inline-block;
+  background-color: #e8f4f8;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.type-label {
   color: #666;
-  font-style: italic;
+  margin-right: 5px;
+  font-size: 0.9em;
+}
+
+.type-value {
+  color: #2c5282;
+  font-weight: 500;
+  font-size: 0.9em;
 }
 
 .document-description {
-  font-size: 0.9em;
+  margin: 8px 0 0 0;
   color: #666;
-  margin-top: 5px;
+  font-size: 0.9em;
+  line-height: 1.4;
 }
 
 .author-button,
 .comision-button {
-  background: none;
-  border: none;
-  color: #0066cc;
-  cursor: pointer;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
   padding: 4px 8px;
   margin: 2px;
-  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
   font-size: 0.9em;
-  transition: background-color 0.2s;
+  color: #2c3e50;
+  display: inline-block;
 }
 
 .author-button:hover,
 .comision-button:hover {
-  background-color: #f0f0f0;
-  text-decoration: underline;
+  background-color: #e0e0e0;
+}
+
+.author-button.highlighted,
+.comision-button.highlighted {
+  background-color: #96b9ff;
+  color: rgb(0, 13, 59);
+  border-color: #96b9ff;
+}
+
+.author-button.highlighted:hover,
+.comision-button.highlighted:hover {
+  background-color: #7aa3ff;
 }
 
 .pdf-link {
@@ -316,4 +428,111 @@ code {
 .tramit-select option:not(:first-child) {
   color: #2c3e50;
   font-weight: 500;
+}
+
+.login-container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.login-input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+  color: #2c3e50;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.login-button {
+  padding: 12px 20px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.login-button:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.login-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #e74c3c;
+  background-color: #fadbd8;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.author-list {
+  display: inline-block;
+  background-color: #f0f0f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 2px;
+  font-size: 0.9em;
+  color: #333;
+}
+
+.document-info p {
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+.document-info strong {
+  color: #666;
+  margin-right: 5px;
+}
+
+.comision-button {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 4px 8px;
+  margin: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.comision-button:hover {
+  background-color: #e0e0e0;
+}
+
+.comision-button.highlighted {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #45a049;
+}
+
+.comision-button.highlighted:hover {
+  background-color: #45a049;
 } 

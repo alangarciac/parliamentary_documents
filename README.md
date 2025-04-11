@@ -1,17 +1,44 @@
 # Parlaments v1
 
-A web application for managing and viewing parliamentary documents from the Argentine Congress.
+A web application for managing and viewing parliamentary documents with advanced filtering capabilities.
 
 **Author:** Alan Garcia Camiña
 
 ## Features
 
-- Parliamentary document management
-- MySQL database integration
-- Manual scraper control
-- Filtering by author and parliamentary procedure number
-- Results pagination
-- Intuitive user interface
+### Authentication System
+- Secure login with JWT token-based authentication
+- Role-based access control (ADMIN and USER roles)
+- Protected routes and API endpoints
+- Automatic token refresh
+
+### Document Management
+- View parliamentary documents with detailed information
+- Filter documents by multiple criteria:
+  - Search by document name or description
+  - Filter by author (supports multiple authors per document)
+  - Filter by document type
+  - Filter by commission
+- Pagination support for large document sets
+- Clear filters functionality
+
+### UI Components
+- Modern and responsive design
+- Interactive filter buttons for authors and commissions
+- Visual feedback for selected filters
+- Loading states and error handling
+- Clean document information display
+- PDF document access
+
+### Database Structure
+The application uses a relational database with the following key tables:
+- `document`: Core document information
+- `author`: Document authors
+- `comision`: Parliamentary commissions
+- `type`: Document types
+- `parliamentary_tramit`: Parliamentary process tracking
+- `user`: User accounts
+- `role`: User roles
 
 ## Technical Stack
 
@@ -77,139 +104,123 @@ DB_NAME=parlaments_db
 
 2. The application will automatically create the necessary database tables on first run.
 
-## Features
+## Getting Started
 
-### Document Management
-- View parliamentary documents in a structured table format
-- Search documents by name or author
-- Filter documents by author
-- Filter documents by parliamentary procedure number
-- View document details including:
-  - Parliamentary procedure number
-  - Document name
-  - Author(s)
-  - PDF link
-- Pagination support (10 documents per page)
-- Responsive design for all screen sizes
+### Prerequisites
+- Node.js (v14 or higher)
+- MySQL database
+- npm or yarn
 
-### Database Integration
-- MySQL database for document storage
-- Automatic document scraping and database population
-- Scheduled updates every 5 hours
-- Manual trigger option for immediate updates
-- Efficient data relationships between documents and authors
-
-### Scraper Control
-- Manual control of scraping range
-- Customizable start and end pages
-- Parameter validation for page ranges
-- Default range (1-5) for scheduled jobs
-- Real-time status updates and error handling
+### Installation
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+4. Configure your database connection in `.env`
+5. Run database migrations:
+   ```bash
+   npm run migrate
+   ```
+6. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
 ## API Endpoints
 
-### Document Management
-- `GET /api/documents` - Get documents with pagination and filters
-  - Query parameters:
-    - `page`: Page number (default: 1)
-    - `author`: Filter by author name
-    - `tramitNumber`: Filter by parliamentary procedure number
+### Authentication
+- `POST /api/auth/login`: User login
+- `POST /api/auth/refresh`: Token refresh
+- `POST /api/auth/logout`: User logout
 
-- `GET /api/authors` - Get all authors for filtering
-- `GET /api/tramit-numbers` - Get available parliamentary procedure numbers
+### Documents
+- `GET /api/documents`: Get documents with pagination and filtering
+- `GET /api/documents/authors`: Get all authors
+- `GET /api/documents/types`: Get all document types
+- `GET /api/documents/comisions`: Get all commissions
 
-### Scraper Control
-- `GET /run-scraper` - Manually trigger the scraper
-  - Query parameters:
-    - `startPage`: Starting page number (optional)
-    - `endPage`: Ending page number (optional)
-  - Example: `/run-scraper?startPage=10&endPage=15`
-  - Default range: 1-5 (if no parameters provided)
+## Filtering System
 
-## Installation
+The application provides a comprehensive filtering system:
 
-1. Clone the repository:
-```bash
-git clone [repository-url]
-cd parlaments_v1
-```
+### Search Filter
+- Full-text search across document names and descriptions
+- Case-insensitive matching
+- Partial word matching
 
-2. Install dependencies:
-```bash
-# Install backend dependencies
-npm install
+### Author Filter
+- Filter by single or multiple authors
+- Visual highlighting of selected authors
+- Supports partial name matching
 
-# Install frontend dependencies
-cd frontend
-npm install
-```
+### Type Filter
+- Filter by document type
+- Clear type categorization
 
-3. Set up the database:
-- Create a MySQL database
-- Update the database configuration in `.env`
-- Run the database initialization script
+### Commission Filter
+- Filter by parliamentary commission
+- Visual highlighting of selected commissions
+- Supports multiple commissions per document
 
-4. Start the application:
-```bash
-# Start the backend server
-npm start
+### Clear Filters
+- One-click reset of all active filters
+- Restores default view
 
-# Start the frontend development server
-cd frontend
-npm start
-```
+## UI/UX Features
 
-## Usage
+### Document Display
+- Clean, organized layout
+- Essential information at a glance
+- Type indicators with visual styling
+- PDF access with clear call-to-action
 
-### Viewing Documents
-- Access the application at `http://localhost:3000`
-- Use the search bar to find specific documents
-- Filter documents by author using the dropdown
-- Filter documents by parliamentary procedure number
-- Navigate through pages using the pagination controls
-- Click on author names to filter by that author
-- Click "Ver PDF" to view the document
+### Interactive Elements
+- Clickable author and commission buttons
+- Visual feedback on hover and selection
+- Responsive design for all screen sizes
+- Loading indicators for async operations
 
-### Scraper Control
-- The scraper runs automatically every 5 hours with default range (1-5)
-- Manually trigger the scraper with custom range:
-  ```bash
-  # Using default range
-  curl http://localhost:3001/run-scraper
-
-  # Using custom range
-  curl http://localhost:3001/run-scraper?startPage=10&endPage=15
-  ```
-- Validation rules:
-  - Both parameters must be numbers
-  - startPage must be greater than 0
-  - endPage must be greater than or equal to startPage
+### Error Handling
+- User-friendly error messages
+- Graceful fallbacks for missing data
+- Network error recovery
+- Form validation feedback
 
 ## Development
 
-### Adding New Features
-1. Create a new branch for your feature
-2. Implement the changes
-3. Test thoroughly
-4. Submit a pull request
-
-### Running Tests
-```bash
-# Run backend tests
-npm test
-
-# Run frontend tests
-cd frontend
-npm test
+### Project Structure
 ```
+parlaments_v1/
+├── frontend/           # React frontend
+│   ├── src/
+│   │   ├── components/ # React components
+│   │   ├── services/   # API services
+│   │   └── utils/      # Utility functions
+├── backend/            # Node.js backend
+│   ├── models/         # Database models
+│   ├── routes/         # API routes
+│   └── services/       # Business logic
+└── database/           # Database scripts
+```
+
+### Available Scripts
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run test`: Run tests
+- `npm run migrate`: Run database migrations
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 

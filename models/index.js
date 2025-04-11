@@ -247,8 +247,8 @@ const UserAuthor = sequelize.define('UserAuthor', {
   timestamps: false
 });
 
-// Define relationships
-User.belongsTo(Role, { foreignKey: 'role_id' });
+// Define associations
+User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
 Role.hasMany(User, { foreignKey: 'role_id' });
 
 Document.belongsTo(ParliamentaryTramit, { foreignKey: 'parliamentary_tramit_id', as: 'parliamentaryTramit' });

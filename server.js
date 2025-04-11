@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const DocumentService = require('./services/documentService');
 const documentScraper = require('./jobs/documentScraper');
+const AuthService = require('./services/authService');
 require('dotenv').config();
 
 const app = express();
@@ -23,8 +24,42 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something broke!' });
 });
 
+// Authentication middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  try {
+    const { user } = AuthService.verifyToken(token);
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(403).json({ error: 'Invalid token' });
+  }
+};
+
+// Login route
+app.post('/api/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const result = await AuthService.login(username, password);
+    res.json(result);
+  } catch (error) {
+    res.status(401).json({ error: error.message });
+  }
+});
+
+// Verify token route
+app.get('/api/verify-token', authenticateToken, (req, res) => {
+  res.json({ user: req.user });
+});
+
 // Get documents with filters
-app.get('/api/documents', async (req, res) => {
+app.get('/api/documents', authenticateToken, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const filters = {
@@ -43,7 +78,7 @@ app.get('/api/documents', async (req, res) => {
 });
 
 // Get all authors for the filter dropdown
-app.get('/api/authors', async (req, res) => {
+app.get('/api/authors', authenticateToken, async (req, res) => {
   try {
     const authors = await DocumentService.getAuthors();
     res.json(authors);
@@ -54,7 +89,7 @@ app.get('/api/authors', async (req, res) => {
 });
 
 // Get all tramit numbers for the filter dropdown
-app.get('/api/tramit-numbers', async (req, res) => {
+app.get('/api/tramit-numbers', authenticateToken, async (req, res) => {
   try {
     const tramitNumbers = await DocumentService.getTramitNumbers();
     res.json(tramitNumbers);
@@ -65,7 +100,7 @@ app.get('/api/tramit-numbers', async (req, res) => {
 });
 
 // Get all types for the filter dropdown
-app.get('/api/types', async (req, res) => {
+app.get('/api/types', authenticateToken, async (req, res) => {
   try {
     const types = await DocumentService.getTypes();
     res.json(types);
@@ -76,7 +111,7 @@ app.get('/api/types', async (req, res) => {
 });
 
 // Get all commissions for the filter dropdown
-app.get('/api/comisions', async (req, res) => {
+app.get('/api/comisions', authenticateToken, async (req, res) => {
   try {
     const comisions = await DocumentService.getComisions();
     res.json(comisions);
