@@ -4,6 +4,18 @@ A web application for managing and viewing parliamentary documents with advanced
 
 **Author:** Alan Garcia Camiña
 
+## System Structure
+
+The application follows a structured database design that manages relationships between different entities:
+
+![Database Structure](https://raw.githubusercontent.com/user-attachments/assets/b09fc896-2ade-49d9-b2f2-27e5d821381f)
+
+### Entity Relationships
+- Users can have multiple roles (0..n to 1..1)
+- Documents can have multiple authors and commissions (many-to-many)
+- Each document has one type and one parliamentary tramit (1..1)
+- Authors and commissions can be associated with multiple documents (0..n)
+
 ## Features
 
 ### Authentication System
@@ -21,6 +33,63 @@ A web application for managing and viewing parliamentary documents with advanced
   - Filter by commission
 - Pagination support for large document sets
 - Clear filters functionality
+
+### Automated Data Collection
+- Scheduled document scraping every 5 hours
+- Manual trigger option for immediate updates
+- Configurable page range for scraping
+- Duplicate detection and handling
+- Error recovery and retry mechanism
+- Progress logging and status updates
+
+### Data Scraping Jobs
+
+#### Scheduled Jobs
+The application includes an automated job system for collecting parliamentary documents:
+
+```javascript
+// Configuration
+defaultStartPage = 31
+defaultEndPage = 1
+scheduleInterval = '0 */5 * * *'  // Every 5 hours
+```
+
+#### Job Features
+- **Automatic Scheduling**: Jobs run every 5 hours to collect new documents
+- **Manual Triggers**: API endpoint to manually start scraping
+- **Range Configuration**: 
+  - Default range: pages 31 to 1
+  - Customizable through API parameters
+  - Validation of page ranges
+- **Data Processing**:
+  - Document details extraction
+  - Author name parsing
+  - Commission identification
+  - PDF link validation
+  - Type categorization
+- **Error Handling**:
+  - Connection retry logic
+  - Invalid data skipping
+  - Error logging
+  - Status reporting
+
+#### API Endpoints for Jobs
+```bash
+# Start manual scraping with default range
+GET /api/scraper/run
+
+# Start scraping with custom range
+GET /api/scraper/run?startPage=20&endPage=10
+
+# Get current job status
+GET /api/scraper/status
+```
+
+#### Job Monitoring
+- Real-time progress updates
+- Success/failure logging
+- Document count reporting
+- Error tracking and notifications
 
 ### UI Components
 - Modern and responsive design
