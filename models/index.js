@@ -13,6 +13,99 @@ const sequelize = new Sequelize(
   }
 );
 
+// Define Role model
+const Role = sequelize.define('Role', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  name: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  }
+}, {
+  tableName: 'role',
+  timestamps: false
+});
+
+// Define User model
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  email: {
+    type: DataTypes.STRING(150),
+    allowNull: false,
+    unique: true
+  },
+  name: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  password: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  role_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  }
+}, {
+  tableName: 'user',
+  timestamps: false
+});
+
+// Define Author model
+const Author = sequelize.define('Author', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  name: {
+    type: DataTypes.STRING(150),
+    allowNull: false
+  }
+}, {
+  tableName: 'author',
+  timestamps: false
+});
+
+// Define Type model
+const Type = sequelize.define('Type', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  name: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  }
+}, {
+  tableName: 'type',
+  timestamps: false
+});
+
+// Define Comision model
+const Comision = sequelize.define('Comision', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  name: {
+    type: DataTypes.STRING(150),
+    allowNull: false
+  }
+}, {
+  tableName: 'comision',
+  timestamps: false
+});
+
 // Define ParliamentaryTramit model
 const ParliamentaryTramit = sequelize.define('ParliamentaryTramit', {
   id: {
@@ -23,6 +116,10 @@ const ParliamentaryTramit = sequelize.define('ParliamentaryTramit', {
   number: {
     type: DataTypes.STRING(50),
     allowNull: false
+  },
+  date: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
   }
 }, {
   tableName: 'parliamentary_tramit',
@@ -37,19 +134,23 @@ const Document = sequelize.define('Document', {
     autoIncrement: true
   },
   name: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.STRING(150),
     allowNull: false
   },
   link_to_pdf: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: true
   },
   description: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  date: {
-    type: DataTypes.DATEONLY,
+  parliamentary_tramit_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false
+  },
+  type_id: {
+    type: DataTypes.INTEGER,
     allowNull: true
   }
 }, {
@@ -57,40 +158,7 @@ const Document = sequelize.define('Document', {
   timestamps: false
 });
 
-// Define Author model
-const Author = sequelize.define('Author', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
-  },
-  name: {
-    type: DataTypes.STRING(255),
-    allowNull: false
-  }
-}, {
-  tableName: 'author',
-  timestamps: false
-});
-
-// Define Subscriber model
-const Subscriber = sequelize.define('Subscriber', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
-  },
-  email: {
-    type: DataTypes.STRING(255),
-    allowNull: false,
-    unique: true
-  }
-}, {
-  tableName: 'subscriber',
-  timestamps: false
-});
-
-// Define DocumentAuthor junction model
+// Define junction models
 const DocumentAuthor = sequelize.define('DocumentAuthor', {
   document_id: {
     type: DataTypes.INTEGER,
@@ -113,13 +181,56 @@ const DocumentAuthor = sequelize.define('DocumentAuthor', {
   timestamps: false
 });
 
-// Define SubscriberAuthor junction model
-const SubscriberAuthor = sequelize.define('SubscriberAuthor', {
-  subscriber_id: {
+const DocumentComision = sequelize.define('DocumentComision', {
+  document_id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     references: {
-      model: Subscriber,
+      model: Document,
+      key: 'id'
+    }
+  },
+  comision_id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    references: {
+      model: Comision,
+      key: 'id'
+    }
+  }
+}, {
+  tableName: 'document_comision',
+  timestamps: false
+});
+
+const UserComision = sequelize.define('UserComision', {
+  user_id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    references: {
+      model: User,
+      key: 'id'
+    }
+  },
+  comision_id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    references: {
+      model: Comision,
+      key: 'id'
+    }
+  }
+}, {
+  tableName: 'user_comision',
+  timestamps: false
+});
+
+const UserAuthor = sequelize.define('UserAuthor', {
+  user_id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    references: {
+      model: User,
       key: 'id'
     }
   },
@@ -132,50 +243,32 @@ const SubscriberAuthor = sequelize.define('SubscriberAuthor', {
     }
   }
 }, {
-  tableName: 'subscriber_author',
+  tableName: 'user_author',
   timestamps: false
 });
 
 // Define relationships
-Document.belongsTo(ParliamentaryTramit, {
-  foreignKey: 'parliamentary_tramit_id',
-  as: 'parliamentaryTramit'
-});
+User.belongsTo(Role, { foreignKey: 'role_id' });
+Role.hasMany(User, { foreignKey: 'role_id' });
 
-ParliamentaryTramit.hasMany(Document, {
-  foreignKey: 'parliamentary_tramit_id',
-  as: 'documents'
-});
+Document.belongsTo(ParliamentaryTramit, { foreignKey: 'parliamentary_tramit_id' });
+ParliamentaryTramit.hasMany(Document, { foreignKey: 'parliamentary_tramit_id' });
 
-// Many-to-many relationship between Document and Author
-Document.belongsToMany(Author, {
-  through: DocumentAuthor,
-  foreignKey: 'document_id',
-  otherKey: 'author_id',
-  as: 'authors'
-});
+Document.belongsTo(Type, { foreignKey: 'type_id' });
+Type.hasMany(Document, { foreignKey: 'type_id' });
 
-Author.belongsToMany(Document, {
-  through: DocumentAuthor,
-  foreignKey: 'author_id',
-  otherKey: 'document_id',
-  as: 'documents'
-});
+// Many-to-many relationships
+Document.belongsToMany(Author, { through: DocumentAuthor });
+Author.belongsToMany(Document, { through: DocumentAuthor });
 
-// Many-to-many relationship between Subscriber and Author
-Subscriber.belongsToMany(Author, {
-  through: SubscriberAuthor,
-  foreignKey: 'subscriber_id',
-  otherKey: 'author_id',
-  as: 'authors'
-});
+Document.belongsToMany(Comision, { through: DocumentComision });
+Comision.belongsToMany(Document, { through: DocumentComision });
 
-Author.belongsToMany(Subscriber, {
-  through: SubscriberAuthor,
-  foreignKey: 'author_id',
-  otherKey: 'subscriber_id',
-  as: 'subscribers'
-});
+User.belongsToMany(Comision, { through: UserComision });
+Comision.belongsToMany(User, { through: UserComision });
+
+User.belongsToMany(Author, { through: UserAuthor });
+Author.belongsToMany(User, { through: UserAuthor });
 
 // Test the database connection
 const testConnection = async () => {
@@ -191,10 +284,15 @@ testConnection();
 
 module.exports = {
   sequelize,
+  Role,
+  User,
+  Author,
+  Type,
+  Comision,
   ParliamentaryTramit,
   Document,
-  Author,
-  Subscriber,
   DocumentAuthor,
-  SubscriberAuthor
+  DocumentComision,
+  UserComision,
+  UserAuthor
 }; 

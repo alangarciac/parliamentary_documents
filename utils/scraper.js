@@ -23,23 +23,51 @@ async function scrapeDocumentsFromPage(documentNumber) {
     const parlamentaryDocumentNumber = breadcrumbText.match(/TRAMITE PARLAMENTARIO N°\s*(\d+)/i)[1];
 
     $('p').each((i, p) => {
-      const bold = $(p).find('b').first();
-      const authorText = bold.text().trim();
-      const authors = parseAuthorNames(authorText);
+      // Extract authors from first span
+      const authorSpan = $(p).find('b span').first();
+      const authorText = authorSpan.text().trim();
+      // Split by semicolons and handle "Y" separators
+      const authors = authorText.split(';').flatMap(part => {
+        return part.split(' Y ').map(name => name.trim());
+      }).filter(name => name);
 
-      const nextSpan = bold.closest('p').find('span').eq(1); // second span
-      const linkElement = nextSpan.find('a').first();
+      // Get the second span containing document details
+      const docSpan = $(p).find('span').eq(1);
+      const docText = docSpan.text().trim();
+      const linkElement = docSpan.find('a').first();
 
       if (linkElement.length) {
+        // Extract document name from link text
+        const documentName = linkElement.text().trim();
+
+        // Extract PDF link
         const href = linkElement.attr('href');
         const fullUrl = new URL(href, url).toString();
-        const filename = linkElement.text().trim() || href.split('/').pop();
-        const documentNumber = filename.split('-')[0];
+
+        // Extract type (text before first period)
+        const typeMatch = docText.match(/^([^.]+)\./);
+        const documentType = typeMatch ? typeMatch[1].trim() : '';
+
+        // Extract description (text between type and link)
+        const descriptionMatch = docText.match(/\.\s*([^(]+)\(/);
+        const documentDescription = descriptionMatch ? descriptionMatch[1].trim() : '';
+
+        // Extract commissions from bold tags after the link
+        const comisions = [];
+        docSpan.find('b').each((i, b) => {
+          const comisionText = $(b).text().trim();
+          if (comisionText) {
+            comisions.push(comisionText);
+          }
+        });
 
         documents.push({
-          name: filename,
+          name: documentName,
           link_to_pdf: fullUrl,
+          type: documentType,
+          description: documentDescription,
           authors: authors,
+          comisions: comisions,
           parliamentary_tramit_id: parseInt(parlamentaryDocumentNumber)
         });
       }

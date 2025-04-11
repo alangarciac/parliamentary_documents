@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { Document, Author, ParliamentaryTramit, DocumentAuthor } = require('../models');
+const { Document, Author, ParliamentaryTramit, DocumentAuthor, Type, Comision, DocumentComision } = require('../models');
 const { scrapeDocumentsFromPage } = require('../utils/scraper');
 
 class DocumentScraper {
@@ -35,17 +35,34 @@ class DocumentScraper {
         defaults: { number: documentData.parliamentary_tramit_id.toString() }
       });
 
+      // Process type
+      let type;
+      if (documentData.type) {
+        try {
+          [type] = await Type.findOrCreate({
+            where: { name: documentData.type },
+            defaults: { name: documentData.type }
+          });
+          console.log(`Processed type: ${type.name} (ID: ${type.id})`);
+        } catch (error) {
+          console.error(`Error processing type "${documentData.type}":`, error);
+          throw error;
+        }
+      }
+
       if (existingDocument) {
         // Update existing document
         await existingDocument.update({
           name: documentData.name,
           description: documentData.description,
-          date: documentData.date,
+          link_to_pdf: documentData.link_to_pdf,
+          type_id: type ? type.id : null,
           parliamentary_tramit_id: parliamentaryTramit.id
         });
 
-        // Update authors
+        // Update authors and commissions
         await this.updateDocumentAuthors(existingDocument, documentData.authors);
+        await this.updateDocumentComisions(existingDocument, documentData.comisions);
         return existingDocument;
       }
 
@@ -54,12 +71,13 @@ class DocumentScraper {
         name: documentData.name,
         link_to_pdf: documentData.link_to_pdf,
         description: documentData.description,
-        date: documentData.date,
+        type_id: type ? type.id : null,
         parliamentary_tramit_id: parliamentaryTramit.id
       });
 
-      // Process authors
+      // Process authors and commissions
       await this.updateDocumentAuthors(document, documentData.authors);
+      await this.updateDocumentComisions(document, documentData.comisions);
 
       return document;
     } catch (error) {
@@ -77,18 +95,55 @@ class DocumentScraper {
 
       // Create new author associations
       for (const authorName of authors) {
-        const [author] = await Author.findOrCreate({
-          where: { name: authorName },
-          defaults: { name: authorName }
-        });
+        try {
+          const [author] = await Author.findOrCreate({
+            where: { name: authorName },
+            defaults: { name: authorName }
+          });
 
-        await DocumentAuthor.create({
-          document_id: document.id,
-          author_id: author.id
-        });
+          await DocumentAuthor.create({
+            document_id: document.id,
+            author_id: author.id
+          });
+          console.log(`Associated author: ${author.name} (ID: ${author.id}) with document: ${document.name}`);
+        } catch (error) {
+          console.error(`Error processing author "${authorName}":`, error);
+          throw error;
+        }
       }
     } catch (error) {
       console.error('Error updating document authors:', error);
+      throw error;
+    }
+  }
+
+  async updateDocumentComisions(document, comisions) {
+    try {
+      // Remove existing commission associations
+      await DocumentComision.destroy({
+        where: { document_id: document.id }
+      });
+
+      // Create new commission associations
+      for (const comisionName of comisions) {
+        try {
+          const [comision] = await Comision.findOrCreate({
+            where: { name: comisionName },
+            defaults: { name: comisionName }
+          });
+
+          await DocumentComision.create({
+            document_id: document.id,
+            comision_id: comision.id
+          });
+          console.log(`Associated commission: ${comision.name} (ID: ${comision.id}) with document: ${document.name}`);
+        } catch (error) {
+          console.error(`Error processing commission "${comisionName}":`, error);
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error('Error updating document commissions:', error);
       throw error;
     }
   }
