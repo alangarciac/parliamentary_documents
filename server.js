@@ -23,13 +23,18 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something broke!' });
 });
 
-// Get documents with pagination and optional filters
+// Get documents with filters
 app.get('/api/documents', async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const authorFilter = req.query.author || null;
-    const tramitNumber = req.query.tramitNumber || null;
-    const result = await DocumentService.getDocuments(page, 10, authorFilter, tramitNumber);
+    const filters = {
+      author: req.query.author || '',
+      tramitNumber: req.query.tramitNumber || '',
+      type: req.query.type || '',
+      comision: req.query.comision || ''
+    };
+    
+    const result = await DocumentService.getDocuments(page, 10, filters);
     res.json(result);
   } catch (error) {
     console.error('Error fetching documents:', error);
@@ -48,7 +53,7 @@ app.get('/api/authors', async (req, res) => {
   }
 });
 
-// Get tramit numbers for the range filter
+// Get all tramit numbers for the filter dropdown
 app.get('/api/tramit-numbers', async (req, res) => {
   try {
     const tramitNumbers = await DocumentService.getTramitNumbers();
@@ -56,6 +61,28 @@ app.get('/api/tramit-numbers', async (req, res) => {
   } catch (error) {
     console.error('Error fetching tramit numbers:', error);
     res.status(500).json({ error: 'Failed to fetch tramit numbers' });
+  }
+});
+
+// Get all types for the filter dropdown
+app.get('/api/types', async (req, res) => {
+  try {
+    const types = await DocumentService.getTypes();
+    res.json(types);
+  } catch (error) {
+    console.error('Error fetching types:', error);
+    res.status(500).json({ error: 'Failed to fetch types' });
+  }
+});
+
+// Get all commissions for the filter dropdown
+app.get('/api/comisions', async (req, res) => {
+  try {
+    const comisions = await DocumentService.getComisions();
+    res.json(comisions);
+  } catch (error) {
+    console.error('Error fetching commissions:', error);
+    res.status(500).json({ error: 'Failed to fetch commissions' });
   }
 });
 

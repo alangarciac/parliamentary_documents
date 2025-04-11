@@ -251,18 +251,38 @@ const UserAuthor = sequelize.define('UserAuthor', {
 User.belongsTo(Role, { foreignKey: 'role_id' });
 Role.hasMany(User, { foreignKey: 'role_id' });
 
-Document.belongsTo(ParliamentaryTramit, { foreignKey: 'parliamentary_tramit_id' });
-ParliamentaryTramit.hasMany(Document, { foreignKey: 'parliamentary_tramit_id' });
+Document.belongsTo(ParliamentaryTramit, { foreignKey: 'parliamentary_tramit_id', as: 'parliamentaryTramit' });
+ParliamentaryTramit.hasMany(Document, { foreignKey: 'parliamentary_tramit_id', as: 'documents' });
 
-Document.belongsTo(Type, { foreignKey: 'type_id' });
-Type.hasMany(Document, { foreignKey: 'type_id' });
+Document.belongsTo(Type, { foreignKey: 'type_id', as: 'type' });
+Type.hasMany(Document, { foreignKey: 'type_id', as: 'documents' });
 
 // Many-to-many relationships
-Document.belongsToMany(Author, { through: DocumentAuthor });
-Author.belongsToMany(Document, { through: DocumentAuthor });
+Document.belongsToMany(Author, { 
+  through: DocumentAuthor, 
+  as: 'authors',
+  foreignKey: 'document_id',
+  otherKey: 'author_id'
+});
+Author.belongsToMany(Document, { 
+  through: DocumentAuthor, 
+  as: 'documents',
+  foreignKey: 'author_id',
+  otherKey: 'document_id'
+});
 
-Document.belongsToMany(Comision, { through: DocumentComision });
-Comision.belongsToMany(Document, { through: DocumentComision });
+Document.belongsToMany(Comision, { 
+  through: DocumentComision, 
+  as: 'comisions',
+  foreignKey: 'document_id',
+  otherKey: 'comision_id'
+});
+Comision.belongsToMany(Document, { 
+  through: DocumentComision, 
+  as: 'documents',
+  foreignKey: 'comision_id',
+  otherKey: 'document_id'
+});
 
 User.belongsToMany(Comision, { through: UserComision });
 Comision.belongsToMany(User, { through: UserComision });

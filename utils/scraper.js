@@ -26,8 +26,10 @@ async function scrapeDocumentsFromPage(documentNumber) {
       // Extract authors from first span
       const authorSpan = $(p).find('b span').first();
       const authorText = authorSpan.text().trim();
+      // Clean author names by removing colons and extra spaces
+      const cleanAuthorText = authorText.replace(/:/g, '').trim();
       // Split by semicolons and handle "Y" separators
-      const authors = authorText.split(';').flatMap(part => {
+      const authors = cleanAuthorText.split(';').flatMap(part => {
         return part.split(' Y ').map(name => name.trim());
       }).filter(name => name);
 

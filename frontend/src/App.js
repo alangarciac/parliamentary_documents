@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './App.css';
 
 // Backend API URL
@@ -25,54 +25,32 @@ const processAuthorNames = (authorString) => {
 
 function App() {
   const [documents, setDocuments] = useState([]);
-  const [authors, setAuthors] = useState([]);
-  const [tramitNumbers, setTramitNumbers] = useState([]);
-  const [selectedAuthor, setSelectedAuthor] = useState('');
-  const [selectedTramit, setSelectedTramit] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [authors, setAuthors] = useState([]);
+  const [tramitNumbers, setTramitNumbers] = useState([]);
+  const [types, setTypes] = useState([]);
+  const [comisions, setComisions] = useState([]);
+  const [filters, setFilters] = useState({
+    author: '',
+    tramitNumber: '',
+    type: '',
+    comision: ''
+  });
 
-  useEffect(() => {
-    fetchAuthors();
-    fetchTramitNumbers();
-    fetchDocuments();
-  }, [currentPage, selectedAuthor, selectedTramit]);
-
-  const fetchAuthors = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/authors');
-      const data = await response.json();
-      setAuthors(data);
-    } catch (error) {
-      console.error('Error fetching authors:', error);
-    }
-  };
+      setLoading(true);
+      const queryParams = new URLSearchParams({
+        page: currentPage,
+        ...(filters.author && { author: filters.author }),
+        ...(filters.tramitNumber && { tramitNumber: filters.tramitNumber }),
+        ...(filters.type && { type: filters.type }),
+        ...(filters.comision && { comision: filters.comision })
+      });
 
-  const fetchTramitNumbers = async () => {
-    try {
-      const response = await fetch('http://localhost:3001/api/tramit-numbers');
-      const data = await response.json();
-      setTramitNumbers(data.map(item => item.number));
-    } catch (error) {
-      console.error('Error fetching tramit numbers:', error);
-    }
-  };
-
-  const fetchDocuments = async () => {
-    setLoading(true);
-    try {
-      const url = new URL('http://localhost:3001/api/documents');
-      url.searchParams.append('page', currentPage);
-      if (selectedAuthor) {
-        url.searchParams.append('author', selectedAuthor);
-      }
-      if (selectedTramit) {
-        url.searchParams.append('tramitNumber', selectedTramit);
-      }
-
-      const response = await fetch(url);
+      const response = await fetch(`http://localhost:3001/api/documents?${queryParams}`);
       const data = await response.json();
       setDocuments(data.documents);
       setTotalPages(data.totalPages);
@@ -81,62 +59,91 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, filters]);
 
-  const handleAuthorChange = (author) => {
-    setSelectedAuthor(author);
-    setCurrentPage(1);
-  };
-
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-  };
-
-  const handleTramitChange = (value) => {
-    setSelectedTramit(value);
-    setCurrentPage(1);
-  };
-
-  const filteredDocuments = documents.filter(doc => 
-    doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    doc.authors.some(author => 
-      author.name.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
+  const fetchAuthors = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/authors');
+      const data = await response.json();
+      setAuthors(data);
+    } catch (error) {
+      console.error('Error fetching authors:', error);
     }
+  }, []);
+
+  const fetchTramitNumbers = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/tramit-numbers');
+      const data = await response.json();
+      setTramitNumbers(data);
+    } catch (error) {
+      console.error('Error fetching tramit numbers:', error);
+    }
+  }, []);
+
+  const fetchTypes = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/types');
+      const data = await response.json();
+      setTypes(data);
+    } catch (error) {
+      console.error('Error fetching types:', error);
+    }
+  }, []);
+
+  const fetchComisions = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/comisions');
+      const data = await response.json();
+      setComisions(data);
+    } catch (error) {
+      console.error('Error fetching commissions:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    fetchAuthors();
+    fetchTramitNumbers();
+    fetchTypes();
+    fetchComisions();
+  }, [fetchData, fetchAuthors, fetchTramitNumbers, fetchTypes, fetchComisions]);
+
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
 
   const renderPagination = () => {
     const pages = [];
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    const maxPagesToShow = 5;
 
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
 
-    // First page
     if (startPage > 1) {
       pages.push(
-        <button
-          key="first"
-          onClick={() => handlePageChange(1)}
-          className="pagination-button"
-        >
+        <button key="1" onClick={() => handlePageChange(1)} className="pagination-button">
           1
         </button>
       );
       if (startPage > 2) {
-        pages.push(<span key="ellipsis1" className="pagination-ellipsis">...</span>);
+        pages.push(<span key="start-ellipsis" className="pagination-ellipsis">...</span>);
       }
     }
 
-    // Page numbers
     for (let i = startPage; i <= endPage; i++) {
       pages.push(
         <button
@@ -149,17 +156,12 @@ function App() {
       );
     }
 
-    // Last page
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
-        pages.push(<span key="ellipsis2" className="pagination-ellipsis">...</span>);
+        pages.push(<span key="end-ellipsis" className="pagination-ellipsis">...</span>);
       }
       pages.push(
-        <button
-          key="last"
-          onClick={() => handlePageChange(totalPages)}
-          className="pagination-button"
-        >
+        <button key={totalPages} onClick={() => handlePageChange(totalPages)} className="pagination-button">
           {totalPages}
         </button>
       );
@@ -168,52 +170,59 @@ function App() {
     return (
       <div className="pagination-container">
         <button
+          className="pagination-button navigation"
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="pagination-button navigation"
         >
-          Anterior
+          Previous
         </button>
-        <div className="pagination-numbers">
-          {pages}
-        </div>
+        <div className="pagination-numbers">{pages}</div>
         <button
+          className="pagination-button navigation"
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="pagination-button navigation"
         >
-          Siguiente
+          Next
         </button>
       </div>
     );
   };
 
+  if (loading) {
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+        <p>Loading documents...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Documentos Parlamentarios</h1>
+        <h1>Parlaments v1</h1>
       </header>
-
       <div className="filters">
-      <label className="filter-label">Buscar por nombre o autor</label>
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="Buscar por nombre o autor..."
-            value={searchTerm}
-            onChange={handleSearch}
-            className="search-input"
-          />
+        <div className="filter-group">
+          <label className="filter-label">Search</label>
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder="Search documents..."
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            />
+          </div>
         </div>
 
-        <div className="author-filter">
-          <label className="filter-label">Autor</label>
+        <div className="filter-group">
+          <label className="filter-label">Author</label>
           <select
-            value={selectedAuthor}
-            onChange={(e) => handleAuthorChange(e.target.value)}
             className="author-select"
+            value={filters.author}
+            onChange={(e) => setFilters({ ...filters, author: e.target.value })}
           >
-            <option value="">Todos los autores</option>
+            <option value="">All Authors</option>
             {authors.map(author => (
               <option key={author.id} value={author.name}>
                 {author.name}
@@ -222,79 +231,114 @@ function App() {
           </select>
         </div>
 
-        <div className="tramit-filter">
-          <label className="filter-label">Trámite Parlamentario</label>
+        <div className="filter-group">
+          <label className="filter-label">Tramit Number</label>
           <select
-            value={selectedTramit}
-            onChange={(e) => handleTramitChange(e.target.value)}
             className="tramit-select"
+            value={filters.tramitNumber}
+            onChange={(e) => setFilters({ ...filters, tramitNumber: e.target.value })}
           >
-            <option value="">Todos los trámites</option>
-            {tramitNumbers
-              .sort((a, b) => parseInt(a) - parseInt(b))
-              .map((number) => (
-                <option key={number} value={number}>
-                  Trámite {number}
-                </option>
-              ))}
+            <option value="">All Tramit Numbers</option>
+            {tramitNumbers.map(tramit => (
+              <option key={tramit.number} value={tramit.number}>
+                {tramit.number}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label className="filter-label">Type</label>
+          <select
+            className="type-select"
+            value={filters.type}
+            onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+          >
+            <option value="">All Types</option>
+            {types.map(type => (
+              <option key={type.id} value={type.name}>
+                {type.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-group">
+          <label className="filter-label">Commission</label>
+          <select
+            className="comision-select"
+            value={filters.comision}
+            onChange={(e) => setFilters({ ...filters, comision: e.target.value })}
+          >
+            <option value="">All Commissions</option>
+            {comisions.map(comision => (
+              <option key={comision.id} value={comision.name}>
+                {comision.name}
+              </option>
+            ))}
           </select>
         </div>
       </div>
-
-      {loading ? (
-        <div className="loading">
-          <div className="spinner"></div>
-          <p>Cargando documentos...</p>
-        </div>
-      ) : (
-        <>
-          <div className="table-container">
-            <table className="documents-table">
-              <thead>
-                <tr>
-                  <th>Trámite Parlamentario</th>
-                  <th>Documento</th>
-                  <th>Autores</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredDocuments.map((doc) => (
-                  <tr key={doc.id}>
-                    <td>{doc.parliamentaryTramit.number}</td>
-                    <td>{doc.name}</td>
-                    <td>
-                      {doc.authors.map((author, index) => (
-                        <span key={author.id}>
-                          {index > 0 && ', '}
-                          <button
-                            className="author-button"
-                            onClick={() => handleAuthorChange(author.name)}
-                          >
-                            {author.name}
-                          </button>
-                        </span>
-                      ))}
-                    </td>
-                    <td>
-                      <a
-                        href={doc.link_to_pdf}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="pdf-link"
-                      >
-                        Ver PDF
-                      </a>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {renderPagination()}
-        </>
-      )}
+      <div className="table-container">
+        <table className="documents-table">
+          <thead>
+            <tr>
+              <th>Trámite Parlamentario</th>
+              <th>Documento</th>
+              <th>Autores</th>
+              <th>Comisiones</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {documents.map((doc) => (
+              <tr key={doc.id}>
+                <td>Trámite {doc.parliamentaryTramit?.number}</td>
+                <td>
+                  <div className="document-info">
+                    <div className="document-name">{doc.name}</div>
+                    <div className="document-type">{doc.type?.name}</div>
+                    <div className="document-description">{doc.description}</div>
+                  </div>
+                </td>
+                <td>
+                  {doc.authors?.map((author) => (
+                    <button
+                      key={author.id}
+                      className="author-button"
+                      onClick={() => setFilters(prev => ({ ...prev, author: author.name.replace(/:/g, '').trim() }))}
+                    >
+                      {author.name.replace(/:/g, '').trim()}
+                    </button>
+                  ))}
+                </td>
+                <td>
+                  {doc.comisions?.map((comision) => (
+                    <button
+                      key={comision.id}
+                      className="comision-button"
+                      onClick={() => setFilters(prev => ({ ...prev, comision: comision.name }))}
+                    >
+                      {comision.name}
+                    </button>
+                  ))}
+                </td>
+                <td>
+                  <a
+                    href={doc.link_to_pdf}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="pdf-link"
+                  >
+                    Ver PDF
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {renderPagination()}
     </div>
   );
 }
